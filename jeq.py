@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 import argparse
+from collections import OrderedDict
 import json
-from operator import eq, lt, gt, ne
+from operator import eq, ne
 import re
 import sys
 import itertools
@@ -12,14 +13,16 @@ __author__ = 'darryl'
 def get_value(d, argval):
     if isinstance(d, list):
         for i in d:
-            print(get_value(i, argval))
-        return argval
-    else:
+            if get_value(i, argval):
+                print(get_value(i, argval))
+    elif isinstance(d, dict):
+        d = OrderedDict(sorted(d.items(), key=lambda t: t[0]))
         for k, v in d.items():
             if k == argval:
                 return d[k]
-            if isinstance(v, list):
-                return get_value(v, argval)
+            elif isinstance(v, list):
+                if get_value(v, argval):
+                    return get_value(v, argval)
             elif isinstance(v, dict):
                 if get_value(v, argval):
                     return get_value(v, argval)
@@ -30,12 +33,14 @@ def delete_key(d, argval):
         for i in d:
             d[d.index(i)] = delete_key(i, argval)
         return d
-    else:
+    elif isinstance(d, dict):
+        d = OrderedDict(sorted(d.items(), key=lambda t: t[0]))
         for k, v in d.items():
             if k == argval:
                 del d[k]
                 return d
             elif isinstance(v, list):
+                if get_value(v, argval):
                     return delete_key(v, argval)
             elif isinstance(v, dict):
                 if get_value(v, argval):
@@ -59,27 +64,39 @@ def find_key(d, argval):
         for i in d:
             d[d.index(i)] = find_key(i, argval)
         return d
-    else:
-        for k, v in d.items():
-            if k == val_k and opt(v, val_v):
-                return d
-            elif isinstance(v, list):
-                    return find_key(v, argval)
-            elif isinstance(v, dict):
-                if get_value(v, val_k):
-                    return find_key(v, argval)
+    elif isinstance(d, dict):
+            d = OrderedDict(sorted(d.items(), key=lambda t: t[0]))
+            for k, v in d.items():
+                v = str(v)
+                if k == val_k and opt(v, val_v):
+                    return d
+                elif isinstance(v, list):
+                    if get_value(v, val_k):
+                        return find_key(v, argval)
+                elif isinstance(v, dict):
+                    if get_value(v, val_k):
+                        return find_key(v, argval)
+
+
+def get_keys(d, argval):
+    d = OrderedDict(sorted(d.items(), key=lambda t: t[0]))
+    for k, v in d.items():
+        if isinstance(v, dict) or isinstance(v, list):
+            return find_key(v, argval)
+        else:
+            print(k)
 
 
 def parse_index(idx_str):
     try:
-        return int(idx_str)
+        return [int(idx_str)]
     except ValueError:
         r1, r2 = idx_str.split(':')
         return [int(i) for i in range(int(r1), int(r2)+1)]
 
 
 def get_index(d, argval):
-    f = set(itertools.chain([parse_index(i) for i in argval.split(',')]))
+    f = set(itertools.chain.from_iterable([parse_index(i) for i in argval.split(',')]))
     if isinstance(d, list):
         return [i for i in d if d.index(i) in f]
 
@@ -88,35 +105,38 @@ def main():
     res = json.loads(sys.stdin.read())
 
     parser = argparse.ArgumentParser(description="Pretty print and modify JSON files")
-    parser.add_argument('-g', '--get', dest='get', action='append',
+    parser.add_argument('-g', '--get', dest='get', action='store',
                         help='Display the value of a given key from all entries')
-    parser.add_argument('-f', '--find', dest='find', action='append',
+    parser.add_argument('-f', '--find', dest='find', action='store',
                         help='Only display entries where a key has a certain value '
                              '(argformat: key[=<>!]value')
     parser.add_argument('-n', '--index', dest='idx', action='store',
-                        help='Display entries with given index only (argformat: 1:10)')
+                        help='Display entries with given index only (argformat: 1:10,12)')
     parser.add_argument('-d', '--delete', dest='delete', action='store',
                         help='Delete a given key and display the resulting output of all entries')
     parser.add_argument('-m', '--merge', dest='merge', action='append',
                         help='Merge output with other JSON file')
+    parser.add_argument('-k', '--keys', dest='keys', action='store',
+                        help='Display the names of the keys')
     args = parser.parse_args()
-
-    if args.find:
-        for a in args.find:
-            res = find_key(res, a)
-
-    if args.delete:
-        for a in args.delete:
-            res = delete_key(res, a)
 
     res = get_index(res, args.idx) if args.idx else res
 
+    if args.find:
+        argval = args.find.split(',')
+        for a in argval:
+            res = find_key(res, a)
+
+    if args.delete:
+        argval = args.delete.split(',')
+        for a in argval:
+            res = delete_key(res, a)
+
     if args.get:
-        for a in args.get:
-            get_value(res, a)
+        get_value(res, args.get)
         res = None
 
-    if res:
+    if res and str(res) != "[None]":
         print(json.dumps(res, indent=4, separators=(',', ': ')))
 
 
