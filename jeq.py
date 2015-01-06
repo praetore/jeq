@@ -13,7 +13,7 @@ def get_value(d, argval):
     if isinstance(d, list):
         for i in d:
             print(get_value(i, argval))
-        return None
+        return argval
     else:
         for k, v in d.items():
             if k == argval:
@@ -61,12 +61,12 @@ def find_key(d, argval):
         return d
     else:
         for k, v in d.items():
-            if k == val_k and opt(v, val_k):
+            if k == val_k and opt(v, val_v):
                 return d
             elif isinstance(v, list):
                     return find_key(v, argval)
             elif isinstance(v, dict):
-                if get_value(v, val_v):
+                if get_value(v, val_k):
                     return find_key(v, argval)
 
 
@@ -88,26 +88,35 @@ def main():
     res = json.loads(sys.stdin.read())
 
     parser = argparse.ArgumentParser(description="Pretty print and modify JSON files")
-    parser.add_argument('-g', '--get', dest='get', action='store',
+    parser.add_argument('-g', '--get', dest='get', action='append',
                         help='Display the value of a given key from all entries')
-    parser.add_argument('-f', '--find', dest='find', action='store',
+    parser.add_argument('-f', '--find', dest='find', action='append',
                         help='Only display entries where a key has a certain value '
                              '(argformat: key[=<>!]value')
     parser.add_argument('-n', '--index', dest='idx', action='store',
                         help='Display entries with given index only (argformat: 1:10)')
     parser.add_argument('-d', '--delete', dest='delete', action='store',
                         help='Delete a given key and display the resulting output of all entries')
-    parser.add_argument('-m', '--merge', dest='merge', action='store',
+    parser.add_argument('-m', '--merge', dest='merge', action='append',
                         help='Merge output with other JSON file')
-    parser.add_argument()
     args = parser.parse_args()
 
-    res = find_key(res, args.find) if args.find else res
-    res = delete_key(res, args.delete) if args.delete else res
-    res = get_index(res, args.idx) if args.idx else res
-    res = get_value(res, args.get) if args.get else res
+    if args.find:
+        for a in args.find:
+            res = find_key(res, a)
 
-    if res and isinstance(res, dict):
+    if args.delete:
+        for a in args.delete:
+            res = delete_key(res, a)
+
+    res = get_index(res, args.idx) if args.idx else res
+
+    if args.get:
+        for a in args.get:
+            get_value(res, a)
+        res = None
+
+    if res:
         print(json.dumps(res, indent=4, separators=(',', ': ')))
 
 
