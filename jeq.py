@@ -109,7 +109,8 @@ def get_index(d, argval):
 
 
 def main():
-    res = json.loads(sys.stdin.read())
+    if '-h' not in sys.argv and '--help' not in sys.argv:
+        res = json.loads(sys.stdin.read())
 
     parser = argparse.ArgumentParser(description="Pretty print and modify JSON files. "
                                                  "Exclusively reads from standard input")
@@ -117,7 +118,7 @@ def main():
                         help='Display the value of a given key from all entries')
     parser.add_argument('-f', '--find', dest='find', action='store',
                         help='Only display entries where a key has a certain value '
-                             '(argformat: key[=<>!]value')
+                             '(argformat: key[=<>!]value)')
     parser.add_argument('-n', '--index', dest='idx', action='store',
                         help='Display entries with given index only (argformat: 1:10,12)')
     parser.add_argument('-d', '--delete', dest='delete', action='store',
