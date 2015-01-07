@@ -31,7 +31,8 @@ def get_value(d, argval):
 def delete_key(d, argval):
     if isinstance(d, list):
         for i in d:
-            d[d.index(i)] = delete_key(i, argval)
+            if get_value(i, argval):
+                d[d.index(i)] = delete_key(i, argval)
         return d
     elif isinstance(d, dict):
         d = OrderedDict(sorted(d.items(), key=lambda t: t[0]))
@@ -40,8 +41,10 @@ def delete_key(d, argval):
                 del d[k]
                 return d
             elif isinstance(v, list):
-                if get_value(v, argval):
-                    return delete_key(v, argval)
+                for i in d[k]:
+                    if get_value(i, argval):
+                        d[k][v.index(i)] = delete_key(i, argval)
+                return d
             elif isinstance(v, dict):
                 if get_value(v, argval):
                     d[k] = delete_key(v, argval)
