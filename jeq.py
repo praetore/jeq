@@ -78,13 +78,20 @@ def find_key(d, argval):
                         return find_key(v, argval)
 
 
-def get_keys(d, argval):
-    d = OrderedDict(sorted(d.items(), key=lambda t: t[0]))
-    for k, v in d.items():
-        if isinstance(v, dict) or isinstance(v, list):
-            return find_key(v, argval)
-        else:
-            print(k)
+def get_keys(d, argval, shown=list()):
+    if isinstance(d, list):
+        for i in d:
+            get_keys(i, argval, shown)
+        return None
+    elif isinstance(d, dict):
+        d = OrderedDict(sorted(d.items(), key=lambda t: t[0]))
+        for k, v in d.items():
+            if isinstance(v, dict) or isinstance(v, list):
+                get_keys(v, argval, shown)
+            else:
+                if k not in shown:
+                    shown.append(k)
+                    print(k)
 
 
 def parse_index(idx_str):
@@ -115,7 +122,7 @@ def main():
                         help='Display entries with given index only (argformat: 1:10,12)')
     parser.add_argument('-d', '--delete', dest='delete', action='store',
                         help='Delete a given key and display the resulting output of all entries')
-    parser.add_argument('-k', '--keys', dest='keys', action='store',
+    parser.add_argument('-k', '--keys', dest='keys', action='store_true',
                         help='Display the names of the keys')
     args = parser.parse_args()
 
@@ -133,6 +140,10 @@ def main():
 
     if args.get:
         get_value(res, args.get)
+        res = None
+
+    if args.keys and res:
+        get_keys(res, args.keys)
         res = None
 
     if res and str(res) != "[None]":
