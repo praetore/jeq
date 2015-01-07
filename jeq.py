@@ -104,7 +104,8 @@ def get_index(d, argval):
 def main():
     res = json.loads(sys.stdin.read())
 
-    parser = argparse.ArgumentParser(description="Pretty print and modify JSON files")
+    parser = argparse.ArgumentParser(description="Pretty print and modify JSON files. "
+                                                 "Exclusively reads from standard input")
     parser.add_argument('-g', '--get', dest='get', action='store',
                         help='Display the value of a given key from all entries')
     parser.add_argument('-f', '--find', dest='find', action='store',
