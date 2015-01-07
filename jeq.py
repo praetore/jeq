@@ -115,8 +115,6 @@ def main():
                         help='Display entries with given index only (argformat: 1:10,12)')
     parser.add_argument('-d', '--delete', dest='delete', action='store',
                         help='Delete a given key and display the resulting output of all entries')
-    parser.add_argument('-m', '--merge', dest='merge', action='append',
-                        help='Merge output with other JSON file')
     parser.add_argument('-k', '--keys', dest='keys', action='store',
                         help='Display the names of the keys')
     args = parser.parse_args()
